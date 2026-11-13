@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="bootstrap-5.3.8-dist/css/bootstrap.min.css">
+    <link rel="icon" type="image/png" href="LOGO.png">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4">
+    <img src="sh.png"  alt="SNHS logo" height="45" width="45" calss="rounded-circle object-fit-cover border border-light border-2">
+    <span class="navbar-brand fw-bold"> Student Dashboard</span>
+    
+    <div class="text-white d-flex align-items-center gap-2">
+        <span>👤 <?= htmlspecialchars($username) ?> (Student)</span>
+        <a href="student_dashboard.php?logout=1" class="btn btn-sm btn-outline-danger">Logout</a>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <?php if ($msg): ?>
+        <div class="alert alert-<?= $msg_type ?> alert-dismissible fade show">
+            <?= htmlspecialchars($msg) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <!-- My Borrow Requests Card -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-bold">📋 My Borrow Requests</div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Book Title</th><th>Date Requested</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <?php if ($my_requests && $my_requests->num_rows > 0): ?>
+                        <?php while ($r = $my_requests->fetch_assoc()): ?>
+                            <tr>
+                                <td><?= htmlspecialchars($r['book_title']) ?></td>
+                                <td><?= $r['request_date'] ?></td>
+                                <td>
+                                    <?php if ($r['status'] === 'Pending'): ?>
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    <?php elseif ($r['status'] === 'Approved'): ?>
+                                        <span class="badge bg-success">Approved</span>
+                                    <?php elseif ($r['status'] === 'Returned'): ?>
+                                        <span class="badge bg-info text-dark">Returned</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-danger">Rejected</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if ($r['status'] === 'Approved'): ?>
+                                        <form method="POST" class="d-inline">
+                                            <input type="hidden" name="request_id" value="<?= $r['id'] ?>">
+                                            <input type="hidden" name="book_id" value="<?= $r['book_id'] ?>">
+                                            <button type="submit" name="return_book" class="btn btn-sm btn-warning">Return Book</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <span class="text-muted">—</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr><td colspan="4" class="text-center text-muted py-3">No borrow requests made yet.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Available Books Card -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white fw-bold">📚 Available Books</div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Title</th><th>Author</th><th>Category</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <?php if ($books && $books->num_rows > 0): ?>
+                        <?php while ($b = $books->fetch_assoc()): ?>
+                            <?php $stat = strtolower($b['status'] ?? 'available'); ?>
+                            <tr>
+                                <td class="fw-bold"><?= htmlspecialchars($b['title'] ?? '') ?></td>
+                                <td><?= htmlspecialchars($b['author'] ?? '') ?></td>
+                                <td><span class="badge bg-secondary"><?= htmlspecialchars($b['category'] ?? 'General') ?></span></td>
+                                <td>
+                                    <span class="badge bg-<?= $stat === 'available' ? 'success' : 'warning' ?>">
+                                        <?= htmlspecialchars($b['status'] ?? 'Available') ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <?php if ($stat === 'available'): ?>
+                                        <form method="POST" class="d-inline">
+                                            <input type="hidden" name="book_id" value="<?= $b['id'] ?>">
+                                            <input type="hidden" name="book_title" value="<?= htmlspecialchars($b['title']) ?>">
+                                            <button type="submit" name="request_borrow" class="btn btn-sm btn-primary">Request Borrow</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <button class="btn btn-sm btn-secondary" disabled>Not Available</button>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr><td colspan="5" class="text-center text-muted py-3">No books available.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

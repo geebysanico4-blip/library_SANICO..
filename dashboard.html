@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Teacher Dashboard</title>
+    <link rel="stylesheet" href="bootstrap-5.3.8-dist/css/bootstrap.min.css">
+    <link rel="icon" type="image/png" href="LOGO.png">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark px-4">
+    <img src="sh.png" alt="SNHS logo" height="50" width="50" calss="rounded-circle object-fit-cover border border-light border-2">
+    <span class="navbar-brand fw-bold">Teacher Dashboard</span>
+    <div class="text-white">
+        👤 <?= htmlspecialchars($_SESSION['username']) ?> (<?= ucfirst($_SESSION['role']) ?>)
+        <a href="index.php?logout=1" class="btn btn-sm btn-outline-danger ms-2">Logout</a>
+    </div>
+</nav>
+
+<div class="container my-4">
+
+    <div class="card shadow-sm mb-4 border-warning">
+        <div class="card-header bg-warning text-dark fw-bold"> Pending Student Borrow Requests</div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Student</th><th>Book Title</th><th>Date</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                    <?php if ($requests && $requests->num_rows > 0): ?>
+                        <?php while ($r = $requests->fetch_assoc()): ?>
+                            <tr>
+                                <td><strong><?= htmlspecialchars($r['username']) ?></strong></td>
+                                <td><?= htmlspecialchars($r['book_title']) ?></td>
+                                <td><?= $r['request_date'] ?></td>
+                                <td>
+                                    <a href="?accept_req=<?= $r['id'] ?>&book_id=<?= $r['book_id'] ?>" class="btn btn-sm btn-success">Accept</a>
+                                    <a href="?reject_req=<?= $r['id'] ?>" class="btn btn-sm btn-danger">Reject</a>
+                                </td>
+                            </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr><td colspan="4" class="text-center text-muted py-3">No pending borrow requests.</td></tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <h4 class="mb-0">Book Inventory</h4>
+            <span class="badge bg-success fs-6">Available: <?= $avail_count ?></span>
+        </div>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">+ Add New Book</button>
+    </div>
+
+    <div class="card shadow-sm">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr><th>#</th><th>Title</th><th>Author</th><th>Category</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                <?php while ($b = $books->fetch_assoc()): ?>
+                <tr>
+                    <td><?= $b['id'] ?></td>
+                    <td><strong><?= htmlspecialchars($b['title'] ?? '') ?></strong></td>
+                    <td><?= htmlspecialchars($b['author'] ?? '') ?></td>
+                    <td><span class="badge bg-secondary"><?= htmlspecialchars($b['category'] ?? 'General') ?></span></td>
+                    <td>
+                        <span class="badge bg-<?= strtolower($b['status'] ?? '') === 'available' ? 'success' : 'warning' ?>">
+                            <?= htmlspecialchars($b['status'] ?? 'Available') ?>
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit<?= $b['id'] ?>">Edit</button>
+                        <a href="?delete=<?= $b['id'] ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete book?')">Delete</a>
+                    </td>
+                </tr>
+
+                <div class="modal fade" id="edit<?= $b['id'] ?>" tabindex="-1">
+                    <div class="modal-dialog">
+                        <form method="POST" class="modal-content">
+                            <div class="modal-header"><h5 class="modal-title">Edit Book #<?= $b['id'] ?></h5></div>
+                            <div class="modal-body">
+                                <input type="hidden" name="book_id" value="<?= $b['id'] ?>">
+                                <input type="text" name="title" value="<?= htmlspecialchars($b['title'] ?? '') ?>" class="form-control mb-2" required>
+                                <input type="text" name="author" value="<?= htmlspecialchars($b['author'] ?? '') ?>" class="form-control mb-2" required>
+                                <input type="text" name="category" value="<?= htmlspecialchars($b['category'] ?? 'General') ?>" class="form-control mb-2" required>
+                                <select name="status" class="form-select">
+                                    <option <?= ($b['status'] ?? '') == 'Available' ? 'selected':'' ?>>Available</option>
+                                    <option <?= ($b['status'] ?? '') == 'Borrowed' ? 'selected':'' ?>>Borrowed</option>
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" name="update_book" class="btn btn-success w-100">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <?php endwhile; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="addModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="POST" class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Add New Book</h5></div>
+            <div class="modal-body">
+                <input type="text" name="title" placeholder="Book Title" class="form-control mb-2" required>
+                <input type="text" name="author" placeholder="Author" class="form-control mb-2" required>
+                <input type="text" name="category" placeholder="Category" class="form-control mb-2" required>
+                <select name="status" class="form-select">
+                    <option value="Available">Available</option>
+                    <option value="Borrowed">Borrowed</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" name="add_book" class="btn btn-primary w-100">Add Book</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
